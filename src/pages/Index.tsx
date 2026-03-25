@@ -1,3 +1,4 @@
+import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mic, Globe, Brain, FileText, ArrowRight, CheckCircle, Volume2 } from "lucide-react";
