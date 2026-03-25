@@ -163,20 +163,24 @@ const LandingPage = ({ lang }: LandingPageProps) => {
           <motion.h2 {...fadeUp} className="text-2xl md:text-3xl font-bold text-center text-foreground mb-12">
             {t.howTitle}
           </motion.h2>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-4">
+          <div className="flex flex-col md:flex-row items-start justify-center gap-6 md:gap-0">
             {t.steps.map((s, i) => (
-              <motion.div key={i} {...fadeUp} transition={{ duration: 0.5, delay: i * 0.15 }} className="flex items-center gap-4 md:flex-col md:text-center">
-                <div className="w-14 h-14 rounded-full bg-gradient-hero text-primary-foreground flex items-center justify-center text-xl font-bold shrink-0">
-                  {s.num}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{s.title}</h3>
-                  <p className="text-sm text-muted-foreground">{s.desc}</p>
-                </div>
+              <React.Fragment key={i}>
+                <motion.div {...fadeUp} transition={{ duration: 0.5, delay: i * 0.15 }} className="flex items-center gap-4 md:flex-col md:text-center md:w-48">
+                  <div className="w-14 h-14 rounded-full bg-gradient-hero text-primary-foreground flex items-center justify-center text-xl font-bold shrink-0">
+                    {s.num}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">{s.title}</h3>
+                    <p className="text-sm text-muted-foreground">{s.desc}</p>
+                  </div>
+                </motion.div>
                 {i < t.steps.length - 1 && (
-                  <ArrowRight className="hidden md:block text-primary/30 mx-4" size={24} />
+                  <div className="hidden md:flex items-center pt-5">
+                    <ArrowRight className="text-primary/30 mx-2" size={24} />
+                  </div>
                 )}
-              </motion.div>
+              </React.Fragment>
             ))}
           </div>
         </div>
