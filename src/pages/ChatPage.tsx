@@ -262,27 +262,6 @@ const ChatPage = ({ lang }: ChatPageProps) => {
         </div>
       </div>
 
-      {/* Quick Reply Buttons */}
-      {showQuestions && status === "chatting" && currentQ < qs.length && (
-        <div className="container max-w-lg pb-2">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex gap-3 justify-center"
-          >
-            {qs[currentQ].options.map((opt) => (
-              <motion.button
-                key={opt}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => handleAnswer(opt)}
-                className="px-8 py-3 rounded-2xl bg-card border-2 border-primary text-primary font-bold text-sm hover:bg-primary hover:text-primary-foreground transition-all shadow-soft"
-              >
-                {opt}
-              </motion.button>
-            ))}
-          </motion.div>
-        </div>
-      )}
 
       {/* Input Bar */}
       <div className="sticky bottom-0 bg-card/95 backdrop-blur-lg border-t border-border">
