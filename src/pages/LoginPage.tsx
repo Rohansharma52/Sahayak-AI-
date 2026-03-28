@@ -1,198 +1,218 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Phone, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Shield, ArrowRight, Loader2 } from "lucide-react";
+import { sendOTP, verifyOTP, signIn } from "@/services/cognitoService";
+import { useAuth } from "@/context/AuthContext";
 import logo from "@/assets/logo.png";
 
-const content = {
+const UI = {
   hi: {
-    title: "अपना नंबर डालें",
-    subtitle: "OTP से verify करें और शुरू करें",
-    phonePlaceholder: "मोबाइल नंबर दर्ज करें",
+    title: "अपना नंबर दर्ज करें",
+    subtitle: "OTP से login करें — कोई password नहीं",
+    phonePlaceholder: "9876543210",
     sendOtp: "OTP भेजें",
-    otpSent: "OTP भेजा गया",
-    otpPlaceholder: "OTP दर्ज करें",
+    otpTitle: "OTP दर्ज करें",
+    otpSubtitle: "आपके नंबर पर SMS आया होगा",
+    otpPlaceholder: "6 अंकों का OTP",
     verify: "Verify करें",
-    helper: "OTP सिर्फ verification के लिए है",
-    verifying: "Verify हो रहा है…",
+    change: "नंबर बदलें",
+    sending: "भेज रहे हैं...",
+    verifying: "Verify हो रहा है...",
+    trust: "आपका डेटा सुरक्षित है",
   },
   en: {
     title: "Enter your number",
-    subtitle: "Verify with OTP and get started",
-    phonePlaceholder: "Enter mobile number",
+    subtitle: "Login with OTP — no password needed",
+    phonePlaceholder: "9876543210",
     sendOtp: "Send OTP",
-    otpSent: "OTP Sent",
-    otpPlaceholder: "Enter OTP",
+    otpTitle: "Enter OTP",
+    otpSubtitle: "Check your SMS for the OTP",
+    otpPlaceholder: "6-digit OTP",
     verify: "Verify",
-    helper: "OTP is only for verification",
-    verifying: "Verifying…",
+    change: "Change number",
+    sending: "Sending...",
+    verifying: "Verifying...",
+    trust: "Your data is secure",
   },
   ta: {
-    title: "உங்கள் எண்ணை உள்ளிடவும்",
-    subtitle: "OTP மூலம் சரிபார்க்கவும்",
-    phonePlaceholder: "மொபைல் எண்ணை உள்ளிடவும்",
+    title: "உங்கள் எண்ணை உள்ளிடுங்கள்",
+    subtitle: "OTP மூலம் உள்நுழையுங்கள்",
+    phonePlaceholder: "9876543210",
     sendOtp: "OTP அனுப்பு",
-    otpSent: "OTP அனுப்பப்பட்டது",
-    otpPlaceholder: "OTP உள்ளிடவும்",
+    otpTitle: "OTP உள்ளிடுங்கள்",
+    otpSubtitle: "SMS-ல் OTP வந்திருக்கும்",
+    otpPlaceholder: "6 இலக்க OTP",
     verify: "சரிபார்",
-    helper: "OTP சரிபார்ப்புக்கு மட்டுமே",
-    verifying: "சரிபார்க்கிறது…",
+    change: "எண்ணை மாற்று",
+    sending: "அனுப்புகிறோம்...",
+    verifying: "சரிபார்க்கிறோம்...",
+    trust: "உங்கள் தரவு பாதுகாப்பானது",
   },
 };
 
+import type { AppLang } from "@/pages/Index";
+
 interface LoginPageProps {
-  lang: "hi" | "en" | "ta";
+  lang: AppLang;
 }
 
 const LoginPage = ({ lang }: LoginPageProps) => {
+  const t = UI[(lang as keyof typeof UI)] ?? UI.hi;
   const navigate = useNavigate();
-  const t = content[lang];
-  const [phone, setPhone] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [verifying, setVerifying] = useState(false);
+  const { refreshUser, authenticated } = useAuth();
 
-  const handleSendOtp = () => {
-    if (phone.length >= 10) {
-      setOtpSent(true);
+  // Already logged in — go straight to chat
+  useEffect(() => {
+    if (authenticated) navigate("/chat", { replace: true });
+  }, [authenticated]);
+
+  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSendOTP = async () => {
+    setError("");
+    const cleaned = phone.replace(/\s|-/g, "");
+    if (!cleaned.match(/^[0-9]{10}$/) && !cleaned.match(/^\+[0-9]{10,13}$/)) {
+      setError("Please enter a valid 10-digit phone number");
+      return;
+    }
+    setLoading(true);
+    try {
+      await sendOTP(cleaned);
+      setStep("otp");
+    } catch (err: any) {
+      setError(err.message || "Failed to send OTP. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleVerify = () => {
-    if (otp.length >= 4) {
-      setVerifying(true);
-      setTimeout(() => {
-        navigate("/chat");
-      }, 1200);
+  const handleVerifyOTP = async () => {
+    setError("");
+    if (otp.trim().length < 4) {
+      setError("Please enter the OTP");
+      return;
+    }
+    setLoading(true);
+    try {
+      // Confirm registration with OTP
+      await verifyOTP(phone, otp.trim());
+      // Sign in after confirmation
+      await signIn(phone);
+      refreshUser();
+      navigate("/chat");
+    } catch (err: any) {
+      setError(err.message || "Invalid OTP. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="pt-16 min-h-screen bg-gradient-earth flex items-center justify-center px-4">
-      {/* Dot pattern */}
-      <div
-        className="absolute inset-0 -z-10"
-        style={{
-          backgroundImage: "radial-gradient(circle, hsl(142 52% 36% / 0.04) 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
-        }}
-      />
-
+    <div className="min-h-screen bg-gradient-earth flex items-center justify-center px-4 pt-14">
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-sm space-y-8"
+        className="w-full max-w-sm"
       >
         {/* Logo */}
-        <div className="text-center space-y-3">
-          <motion.div
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 150 }}
-            className="w-16 h-16 rounded-2xl bg-gradient-hero flex items-center justify-center mx-auto shadow-glow"
-          >
-            <img src={logo} alt="Sahayak AI" className="w-10 h-10" />
-          </motion.div>
-          <h1 className="text-2xl font-extrabold text-foreground">{t.title}</h1>
-          <p className="text-sm text-muted-foreground">{t.subtitle}</p>
+        <div className="flex flex-col items-center mb-8 space-y-3">
+          <img src={logo} alt="Sahayak AI" className="h-14 w-14" />
+          <h1 className="text-2xl font-extrabold text-foreground">
+            Sahayak <span className="text-gradient-primary">AI</span>
+          </h1>
         </div>
 
-        {/* Form Card */}
-        <div className="bg-card rounded-3xl p-7 shadow-elevated border border-border space-y-5">
-          {/* Phone Input */}
-          <div className="space-y-2">
-            <div className="relative">
-              <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="tel"
-                maxLength={10}
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                placeholder={t.phonePlaceholder}
-                className="w-full pl-12 pr-4 py-4 rounded-2xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-              />
-            </div>
-          </div>
+        <div className="bg-card rounded-3xl p-8 shadow-elevated border border-border space-y-6">
+          {step === "phone" ? (
+            <>
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{t.title}</h2>
+                <p className="text-sm text-muted-foreground mt-1">{t.subtitle}</p>
+              </div>
 
-          {/* Send OTP Button */}
-          <AnimatePresence mode="wait">
-            {!otpSent ? (
-              <motion.button
-                key="send"
-                initial={{ opacity: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={handleSendOtp}
-                disabled={phone.length < 10}
-                className="w-full py-4 rounded-2xl bg-gradient-hero text-primary-foreground font-bold text-base shadow-card flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              >
-                {t.sendOtp} <ArrowRight size={18} />
-              </motion.button>
-            ) : (
-              <motion.div
-                key="otp-section"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                transition={{ duration: 0.3 }}
-                className="space-y-4"
-              >
-                {/* OTP Sent badge */}
-                <div className="flex items-center gap-2 justify-center text-sm text-primary font-semibold">
-                  <ShieldCheck size={16} />
-                  {t.otpSent} ✓
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border bg-secondary focus-within:border-primary transition-colors">
+                  <span className="text-sm font-semibold text-foreground shrink-0">+91</span>
+                  <div className="w-px h-5 bg-border shrink-0" />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    onKeyDown={(e) => e.key === "Enter" && handleSendOTP()}
+                    placeholder="9876543210"
+                    className="flex-1 bg-transparent text-foreground text-sm outline-none placeholder:text-muted-foreground"
+                  />
                 </div>
 
-                {/* OTP Input - individual boxes */}
-                <div className="flex gap-3 justify-center">
-                  {[0, 1, 2, 3].map((i) => (
-                    <input
-                      key={i}
-                      type="text"
-                      maxLength={1}
-                      value={otp[i] || ""}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, "");
-                        const newOtp = otp.split("");
-                        newOtp[i] = val;
-                        setOtp(newOtp.join(""));
-                        // Auto-focus next
-                        if (val && e.target.nextElementSibling) {
-                          (e.target.nextElementSibling as HTMLInputElement).focus();
-                        }
-                      }}
-                      className="w-14 h-14 rounded-2xl bg-secondary border-2 border-border text-center text-xl font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    />
-                  ))}
-                </div>
+                {error && <p className="text-xs text-destructive px-1">{error}</p>}
 
-                {/* Verify Button */}
                 <motion.button
+                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={handleVerify}
-                  disabled={otp.length < 4 || verifying}
-                  className="w-full py-4 rounded-2xl bg-gradient-hero text-primary-foreground font-bold text-base shadow-card flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  onClick={handleSendOTP}
+                  disabled={loading}
+                  className="w-full py-4 rounded-2xl bg-gradient-hero text-primary-foreground font-bold text-base shadow-elevated flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  {verifying ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      {t.verifying}
-                    </>
-                  ) : (
-                    <>
-                      {t.verify} <ArrowRight size={18} />
-                    </>
-                  )}
+                  {loading
+                    ? <><Loader2 size={18} className="animate-spin" /> {t.sending}</>
+                    : <>{t.sendOtp} <ArrowRight size={18} /></>
+                  }
                 </motion.button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{t.otpTitle}</h2>
+                <p className="text-sm text-muted-foreground mt-1">{t.otpSubtitle}</p>
+                <p className="text-xs text-primary font-semibold mt-1">+91 {phone}</p>
+              </div>
 
-          {/* Helper text */}
-          <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1.5">
-            <ShieldCheck size={12} className="text-primary" />
-            {t.helper}
-          </p>
+              <div className="space-y-3">
+                <input
+                  type="number"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.slice(0, 6))}
+                  onKeyDown={(e) => e.key === "Enter" && handleVerifyOTP()}
+                  placeholder={t.otpPlaceholder}
+                  className="w-full px-4 py-3.5 rounded-2xl border border-border bg-secondary text-foreground text-center text-2xl font-bold tracking-widest outline-none focus:border-primary transition-colors placeholder:text-sm placeholder:font-normal placeholder:tracking-normal"
+                />
+
+                {error && <p className="text-xs text-destructive px-1">{error}</p>}
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleVerifyOTP}
+                  disabled={loading}
+                  className="w-full py-4 rounded-2xl bg-gradient-hero text-primary-foreground font-bold text-base shadow-elevated flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {loading
+                    ? <><Loader2 size={18} className="animate-spin" /> {t.verifying}</>
+                    : <>{t.verify} <ArrowRight size={18} /></>
+                  }
+                </motion.button>
+
+                <button
+                  onClick={() => { setStep("phone"); setOtp(""); setError(""); }}
+                  className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+                >
+                  ← {t.change}
+                </button>
+              </div>
+            </>
+          )}
+
+          <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground pt-2 border-t border-border">
+            <Shield size={12} className="text-primary" />
+            {t.trust}
+          </div>
         </div>
       </motion.div>
     </div>
