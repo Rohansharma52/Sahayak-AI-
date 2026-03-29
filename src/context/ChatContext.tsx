@@ -81,20 +81,36 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     historyRef.current.push({ role: "user", content: transcript });
 
     try {
+      console.log("Calling Gemini with history:", historyRef.current);
       const reply = await askGemini(historyRef.current, lang);
+      console.log("Gemini reply:", reply);
+      
       historyRef.current.push({ role: "assistant", content: reply });
 
       dispatch({ type: "ADD_MESSAGE", payload: { from: "bot", text: reply } });
 
       // Generate audio and auto-play
-      const audioUrl = await synthesizeSpeech(reply, lang);
-      if (audioUrl) dispatch({ type: "SET_AUDIO_ON_LAST", payload: audioUrl });
+      try {
+        const audioUrl = await synthesizeSpeech(reply, lang);
+        if (audioUrl) dispatch({ type: "SET_AUDIO_ON_LAST", payload: audioUrl });
+      } catch (audioErr) {
+        console.error("Audio synthesis failed:", audioErr);
+      }
 
       dispatch({ type: "SET_STATUS", payload: "done" });
-    } catch (err) {
-      console.error(err);
-      dispatch({ type: "SET_ERROR", payload: "Something went wrong." });
+    } catch (err: any) {
+      console.error("Chat error details:", err);
+      dispatch({ type: "SET_ERROR", payload: err.message || "Something went wrong." });
       dispatch({ type: "SET_STATUS", payload: "idle" });
+      
+      // Add a friendly error message from the bot
+      dispatch({ 
+        type: "ADD_MESSAGE", 
+        payload: { 
+          from: "bot", 
+          text: "माफ़ करें, मैं अभी आपकी मदद नहीं कर पा रहा हूँ। कृपया इंटरनेट कनेक्शन चेक करें या थोड़ी देर बाद कोशिश करें।" 
+        } 
+      });
     }
   };
 

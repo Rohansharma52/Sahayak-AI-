@@ -50,8 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = () => {
     const user = getCurrentUser();
-    // Load profile from local storage if available
-    let profile = DEFAULT_PROFILE;
+    // Default profile for new users - use phone as name initially
+    let profile: UserProfile = {
+      ...DEFAULT_PROFILE,
+      name: user ? `Farmer (${user.slice(-4)})` : "Guest",
+      phone: user || "",
+      isVerified: !!user
+    };
+
     try {
       const savedProfile = localStorage.getItem("farmer_profile");
       if (savedProfile) {
@@ -73,7 +79,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     cognitoLogout();
-    setState(prev => ({ ...prev, user: null, loading: false, authenticated: false }));
+    localStorage.removeItem("sahayak_token");
+    localStorage.removeItem("sahayak_phone");
+    setState(prev => ({ 
+      ...prev, 
+      user: null, 
+      profile: DEFAULT_PROFILE, 
+      loading: false, 
+      authenticated: false 
+    }));
   };
 
   const updateProfile = (newProfile: Partial<UserProfile>) => {

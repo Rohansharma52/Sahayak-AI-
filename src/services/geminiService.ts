@@ -10,7 +10,7 @@ const LANG_NAME: Record<string, string> = {
 };
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "google/gemini-2.0-flash-001";
+const MODEL = "google/gemini-2.0-flash-lite-001";
 
 type Message = { role: string; content: string };
 

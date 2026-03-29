@@ -304,33 +304,62 @@ const LandingPage = ({ lang, activeNav, onNavChange }: LandingPageProps) => {
 
         {/* 3 CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* LIVE Weather Card */}
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }}
-            className="rounded-3xl overflow-hidden shadow-lg shadow-black/5" style={{ minHeight: 180 }}>
-            <WeatherCard lang={lang} defaultLocation={LOCATIONS[0]} compact />
+            className="bg-white dark:bg-gray-900 rounded-[32px] p-6 border border-gray-100 dark:border-gray-800 transition-all shadow-sm hover:shadow-md group relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
+            
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+                <Shield size={14} className="opacity-50" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{weatherData?.city?.toUpperCase() || "MEERUT"}</span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
+                <Cloud size={16} className="text-blue-500" />
+              </div>
+            </div>
+
+            <div className="flex items-baseline gap-2 mb-8">
+              <h2 className="text-6xl font-black text-gray-900 dark:text-white tracking-tighter">{temp}°</h2>
+              <p className="text-sm font-bold text-gray-400 dark:text-gray-500">{weatherData?.weathercode === 0 ? "Sunny" : "Partly Cloudy"}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mt-auto">
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
+                <Wind size={16} className="text-blue-500" />
+                <span className="text-[11px] font-black text-gray-700 dark:text-gray-300">{weatherData?.windspeed || 4} km/h</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
+                <Clock size={16} className="text-gray-400" />
+                <span className="text-[11px] font-black text-gray-700 dark:text-gray-300">05:45</span>
+              </div>
+            </div>
           </motion.div>
 
+          {/* Market Prices Card */}
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.15 }}
-            className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800 transition-colors shadow-lg shadow-black/5"
-            style={{ boxShadow:"0 2px 20px rgba(0,0,0,0.05)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <p className="font-black text-gray-800 dark:text-white text-sm">{t(UI_EN.marketTitle)}</p>
-              <button onClick={() => switchTab("mandi")} className="text-xs font-bold flex items-center gap-0.5 text-green-600 dark:text-green-400">
-                {t("View")}<ChevronRight size={13} />
+            className="bg-white dark:bg-gray-900 rounded-[32px] p-6 border border-gray-100 dark:border-gray-800 transition-all shadow-sm hover:shadow-md relative overflow-hidden"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-base font-black text-gray-900 dark:text-white">{t(UI_EN.marketTitle)}</h3>
+              <button onClick={() => switchTab("mandi")} className="text-[11px] font-black text-green-600 hover:text-green-700 flex items-center gap-1 transition-colors">
+                {t(UI_EN.viewAll)} <ChevronRight size={14} />
               </button>
             </div>
-            <div className="space-y-3">
+
+            <div className="space-y-5">
               {[
-                { name: t("Cotton"),  price:"₹7,240", change:"+1.2%", up:true },
-                { name: t("Wheat"),   price:"₹2,150", change:"+0.8%", up:true },
-                { name: t("Mustard"), price:"₹5,450", change:"-0.5%", up:false },
-              ].map((item,i) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-800 last:border-0">
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{item.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-black text-gray-900 dark:text-white">{item.price}</span>
-                    <span className={`text-xs font-bold flex items-center gap-0.5 px-2 py-0.5 rounded-full ${item.up?"bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400":"bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"}`}>
-                      <ArrowUpRight size={10} className={item.up?"":"rotate-90"} />{item.change}
+                { name: UI_EN.cotton, price: "7,240", change: "+1.2%", up: true },
+                { name: UI_EN.wheat, price: "2,150", change: "+0.8%", up: true },
+                { name: UI_EN.mustard, price: "5,450", change: "-0.5%", up: false },
+              ].map((crop, i) => (
+                <div key={i} className="flex items-center justify-between group cursor-pointer">
+                  <span className="text-sm font-bold text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{t(crop.name)}</span>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-black text-gray-900 dark:text-white">₹{crop.price}</span>
+                    <span className={`text-[10px] font-black px-2 py-1 rounded-lg flex items-center gap-0.5 ${crop.up ? 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'}`}>
+                      {crop.up ? <ArrowUpRight size={10} /> : <ArrowUpRight size={10} className="rotate-90" />}
+                      {crop.change}
                     </span>
                   </div>
                 </div>
@@ -338,75 +367,65 @@ const LandingPage = ({ lang, activeNav, onNavChange }: LandingPageProps) => {
             </div>
           </motion.div>
 
+          {/* Smart Irrigation Advisor Card */}
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2 }}
-            className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800 flex flex-col justify-between transition-colors shadow-lg shadow-black/5 relative overflow-hidden group"
-            style={{ boxShadow:"0 2px 20px rgba(0,0,0,0.05)" }}>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/5 to-green-500/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            
-            <div className="space-y-4 relative z-10">
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <p className="font-black text-gray-900 dark:text-white text-sm leading-tight">{t(UI_EN.irrigationTitle)}</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${soilColor}`}>
-                      {t(soilStatus)}
-                    </span>
-                  </div>
-                </div>
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 text-blue-600 dark:text-blue-400">
-                  <Droplets size={20} />
-                </div>
+            className="bg-white dark:bg-gray-900 rounded-[32px] p-6 border border-gray-100 dark:border-gray-800 transition-all shadow-sm hover:shadow-md relative overflow-hidden"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="space-y-1">
+                <h3 className="text-base font-black text-gray-900 dark:text-white leading-tight">{t(UI_EN.irrigationTitle)}</h3>
+                <span className={`inline-block text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${soilColor}`}>
+                  {t(soilStatus)}
+                </span>
               </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <div className="p-2 rounded-2xl bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100/50 dark:border-gray-700/50 text-center">
-                  <Sun size={14} className="mx-auto mb-1 text-amber-500" />
-                  <p className="text-[10px] font-bold text-gray-900 dark:text-white">{temp}°C</p>
-                </div>
-                <div className="p-2 rounded-2xl bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100/50 dark:border-gray-700/50 text-center">
-                  <Droplets size={14} className="mx-auto mb-1 text-blue-500" />
-                  <p className="text-[10px] font-bold text-gray-900 dark:text-white">{humidity}%</p>
-                </div>
-                <div className="p-2 rounded-2xl bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100/50 dark:border-gray-700/50 text-center">
-                  <CloudRain size={14} className="mx-auto mb-1 text-cyan-500" />
-                  <p className="text-[10px] font-bold text-gray-900 dark:text-white">{rainProb}%</p>
-                </div>
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500 border border-blue-100 dark:border-blue-800">
+                <Droplets size={20} />
               </div>
+            </div>
 
-              <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 p-3 rounded-2xl border border-blue-100/50 dark:border-blue-800/50">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Sparkles size={14} className="text-blue-600 dark:text-blue-400" />
-                  <p className="text-[11px] font-black text-blue-900 dark:text-blue-100 uppercase tracking-wide">AI Advice</p>
+            <div className="grid grid-cols-3 gap-2 mb-6">
+              {[
+                { icon: Sun, val: `${temp}°C`, color: "text-amber-500" },
+                { icon: Droplets, val: `${humidity}%`, color: "text-blue-500" },
+                { icon: CloudRain, val: `${rainProb}%`, color: "text-cyan-500" },
+              ].map((stat, i) => (
+                <div key={i} className="p-3 rounded-2xl bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 text-center">
+                  <stat.icon size={16} className={`mx-auto mb-1.5 ${stat.color}`} />
+                  <p className="text-[11px] font-black text-gray-900 dark:text-white">{stat.val}</p>
                 </div>
-                <p className="text-xs font-bold text-gray-700 dark:text-gray-300 leading-relaxed italic">
-                  "{t(soilAdvice)}"
-                </p>
+              ))}
+            </div>
+
+            <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-[24px] border border-blue-100 dark:border-blue-800/50 mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap size={14} className="text-blue-600 dark:text-blue-400" />
+                <span className="text-[10px] font-black text-blue-900 dark:text-blue-200 uppercase tracking-widest">AI ADVICE</span>
               </div>
+              <p className="text-xs font-bold text-gray-700 dark:text-gray-300 italic leading-relaxed">
+                "{t(soilAdvice)}"
+              </p>
+            </div>
 
-              <div>
-                <div className="flex justify-between text-[10px] mb-1.5 px-1">
-                  <span className="text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest">{t(UI_EN.soilMoisture)}</span>
-                  <span className="font-black text-blue-600 dark:text-blue-400">{moistureLevel}%</span>
-                </div>
-                <div className="w-full rounded-full h-2.5 overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
-                  <motion.div initial={{ width:0 }} animate={{ width:`${moistureLevel}%` }}
-                    transition={{ duration:1.5, ease:"easeOut", delay:0.5 }}
-                    className="h-full rounded-full relative"
-                    style={{ background: soilStatus === "Dry" ? "linear-gradient(90deg,#ef4444,#f87171)" : 
-                                       soilStatus === "Wet" ? "linear-gradient(90deg,#3b82f6,#06b6d4)" : 
-                                       "linear-gradient(90deg,#22c55e,#4ade80)" }}>
-                    <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                  </motion.div>
-                </div>
+            <div className="space-y-3">
+              <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">
+                <span>{t(UI_EN.soilMoisture)}</span>
+                <span className="text-blue-600">{moistureLevel}%</span>
+              </div>
+              <div className="w-full h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden border border-gray-200/50 dark:border-gray-700">
+                <motion.div 
+                  initial={{ width: 0 }} 
+                  animate={{ width: `${moistureLevel}%` }}
+                  className="h-full rounded-full bg-gradient-to-r from-green-400 to-green-500"
+                />
               </div>
             </div>
 
             <button 
-              onClick={() => setReportModalOpen(true)}
-              className="w-full mt-4 py-2.5 rounded-2xl text-xs font-black transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-600 active:scale-95 shadow-sm"
-            >
-              {t(UI_EN.getReport)}
-            </button>
+                onClick={() => setReportModalOpen(true)}
+                className="w-full mt-6 py-3.5 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-gray-100 dark:border-gray-700 text-[11px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all active:scale-[0.98]"
+              >
+                {t(UI_EN.getReport)}
+              </button>
           </motion.div>
         </div>
 
@@ -590,7 +609,7 @@ const LandingPage = ({ lang, activeNav, onNavChange }: LandingPageProps) => {
 
         {/* MAIN SERVICES */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.28 }}>
-          <h2 className="text-xl font-black text-gray-900 dark:text-white mb-4">{t("Our Services")}</h2>
+          <h2 className="text-xl font-black text-gray-900 dark:text-white mb-4">{t(UI_EN.services)}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               {

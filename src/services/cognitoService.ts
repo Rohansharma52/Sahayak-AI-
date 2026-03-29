@@ -30,86 +30,46 @@ function getCognitoUser(phone: string): CognitoUser {
  * - New user: signUp → Cognito sends confirmation OTP
  * - Returning confirmed user: forgotPassword → Cognito sends reset OTP
  */
+/**
+ * MOCK OTP SYSTEM FOR TESTING
+ */
+const MOCK_OTPS = ["726626", "131514", "692005", "152008"];
+
 export function sendOTP(phone: string): Promise<void> {
   _currentPhone = formatPhone(phone);
-  _isReturningUser = false;
-
-  return new Promise((resolve, reject) => {
-    const attributes = [
-      new CognitoUserAttribute({ Name: "phone_number", Value: _currentPhone }),
-    ];
-
-    userPool.signUp(_currentPhone, generateTempPassword(), attributes, [], (err) => {
-      if (!err) {
-        // New user — OTP sent via signUp confirmation
-        _isReturningUser = false;
-        return resolve();
-      }
-
-      if (err.name === "UsernameExistsException") {
-        // Returning user — use forgotPassword to send OTP via SMS
-        _isReturningUser = true;
-        const cognitoUser = getCognitoUser(_currentPhone);
-        cognitoUser.forgotPassword({
-          onSuccess: () => resolve(),
-          onFailure: (fpErr) => reject(new Error(fpErr.message)),
-          inputVerificationCode: () => resolve(), // OTP sent, waiting for input
-        });
-      } else {
-        reject(new Error(err.message));
-      }
-    });
+  console.log(`[MOCK] Sending OTP from valid list to:`, _currentPhone);
+  
+  return new Promise((resolve) => {
+    // Simulate network delay
+    setTimeout(() => {
+      resolve();
+    }, 800);
   });
 }
 
-/**
- * Step 2 — Verify OTP.
- * - New user: confirmRegistration
- * - Returning user: confirmPassword (completes forgotPassword flow)
- */
 export function verifyOTP(phone: string, code: string): Promise<void> {
   const formattedPhone = formatPhone(phone);
-  const cognitoUser = getCognitoUser(formattedPhone);
+  console.log(`[MOCK] Verifying OTP ${code} for:`, formattedPhone);
 
   return new Promise((resolve, reject) => {
-    if (_isReturningUser) {
-      // Confirm new password using the OTP
-      cognitoUser.confirmPassword(code, generateTempPassword(), {
-        onSuccess: () => resolve(),
-        onFailure: (err) => reject(new Error(err.message)),
-      });
-    } else {
-      cognitoUser.confirmRegistration(code, true, (err) => {
-        if (err) return reject(new Error(err.message));
+    setTimeout(() => {
+      if (MOCK_OTPS.includes(code.trim())) {
         resolve();
-      });
-    }
+      } else {
+        reject(new Error("Invalid OTP. Please try again."));
+      }
+    }, 500);
   });
 }
 
-/**
- * Step 3 — Sign in after OTP verified.
- */
 export function signIn(phone: string): Promise<string> {
   const formattedPhone = formatPhone(phone);
-  const cognitoUser = getCognitoUser(formattedPhone);
-
-  const authDetails = new AuthenticationDetails({
-    Username: formattedPhone,
-    Password: generateTempPassword(),
-  });
-
-  return new Promise((resolve, reject) => {
-    cognitoUser.authenticateUser(authDetails, {
-      onSuccess: (session) => {
-        const token = session.getAccessToken().getJwtToken();
-        localStorage.setItem("sahayak_token", token);
-        localStorage.setItem("sahayak_phone", formattedPhone);
-        resolve(token);
-      },
-      onFailure: (err) => reject(new Error(err.message)),
-    });
-  });
+  const mockToken = "mock-jwt-token-" + Date.now();
+  
+  localStorage.setItem("sahayak_token", mockToken);
+  localStorage.setItem("sahayak_phone", formattedPhone);
+  
+  return Promise.resolve(mockToken);
 }
 
 export function getCurrentUser(): string | null {
