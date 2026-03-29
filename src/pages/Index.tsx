@@ -15,6 +15,7 @@ import MarketPage from "./MarketPage";
 import SchemePage from "./SchemePage";
 import WeatherPage from "./WeatherPage";
 import AdvisoryPage from "./AdvisoryPage";
+import ChatPage from "./ChatPage";
 import WeatherCard from "@/components/WeatherCard";
 import { LOCATIONS, getWeather, type WeatherData } from "@/services/weatherService";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -235,36 +236,8 @@ const LandingPage = ({ lang, activeNav, onNavChange }: LandingPageProps) => {
   if (activeTab === "yojana")   return <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300"><Sidebar /><SchemePage lang={lang} /></div>;
   if (activeTab === "weather")  return <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300"><Sidebar /><WeatherPage lang={lang} /></div>;
   if (activeTab === "advisory") return <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300"><Sidebar /><AdvisoryPage lang={lang} /></div>;
-  if (activeTab === "chat") return (
-    <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center transition-colors duration-300"><Sidebar />
-      <div className="text-center space-y-5 p-8">
-        <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center" style={{ background: isDarkMode ? "#1a4a1f" : "#eaf7ea" }}>
-          <Mic size={36} style={{ color: isDarkMode ? "#4ade80" : "#1f6b2a" }} />
-        </div>
-        <h2 className="text-2xl font-black text-gray-900 dark:text-white">{greetingText}</h2>
-        <p className="text-gray-500 dark:text-gray-400 max-w-sm">{t(UI_EN.greetSub)}</p>
-        <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }} onClick={goChat}
-          className="inline-flex items-center gap-3 px-10 py-4 rounded-2xl text-white text-lg font-black shadow-lg"
-          style={{ background:"linear-gradient(135deg,#1f6b2a,#2e8b57)" }}>
-          <Mic size={22} />{t(UI_EN.askBtn)}
-        </motion.button>
-      </div>
-    </div>
-  );
-  if (activeTab === "rog") return (
-    <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center transition-colors duration-300"><Sidebar />
-      <div className="text-center space-y-5 p-8 max-w-md">
-        <div className="text-7xl">🌿</div>
-        <h2 className="text-2xl font-black text-gray-900 dark:text-white">{t(UI_EN.diseaseTitle)}</h2>
-        <p className="text-gray-500 dark:text-gray-400">{t(UI_EN.diseaseSub)}</p>
-        <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }} onClick={goChat}
-          className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-white font-black shadow-lg"
-          style={{ background:"linear-gradient(135deg,#1f6b2a,#2e8b57)" }}>
-          <Camera size={20} />{t(UI_EN.scanBtn)}
-        </motion.button>
-      </div>
-    </div>
-  );
+  if (activeTab === "chat") return <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300"><Sidebar /><div className="flex-1 h-[calc(100vh-64px)]"><ChatPage lang={lang} /></div></div>;
+  if (activeTab === "rog") return <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300"><Sidebar /><div className="flex-1 h-[calc(100vh-64px)]"><ChatPage lang={lang} /></div></div>;
 
   return (
     <div className="pt-16 pl-16 min-h-screen transition-colors duration-300" style={{ background: isDarkMode ? "#0a0c0a" : "#f7faf7" }}>
