@@ -1,75 +1,75 @@
-import {
-  CognitoUserPool,
-  CognitoUser,
-  AuthenticationDetails,
-  CognitoUserAttribute,
-} from "amazon-cognito-identity-js";
+// Real OTP service — uses /api/send-otp backend in production
+// Falls back to dev mode (OTP shown in console/response) during development
 
-const poolData = {
-  UserPoolId: import.meta.env.VITE_AWS_COGNITO_USER_POOL_ID as string,
-  ClientId: import.meta.env.VITE_AWS_COGNITO_CLIENT_ID as string,
-};
-
-const userPool = new CognitoUserPool(poolData);
-
-let _currentPhone = "";
-// Track if this is a returning (already confirmed) user login
-let _isReturningUser = false;
+const IS_PROD = import.meta.env.PROD;
 
 function formatPhone(phone: string): string {
-  const cleaned = phone.replace(/\s/g, "");
-  return cleaned.startsWith("+") ? cleaned : `+91${cleaned}`;
+  const cleaned = phone.replace(/\D/g, "").slice(-10);
+  return cleaned;
 }
 
-function getCognitoUser(phone: string): CognitoUser {
-  return new CognitoUser({ Username: phone, Pool: userPool });
-}
+let pendingDevOtp: string | null = null;
 
-/**
- * Step 1 — Send OTP.
- * - New user: signUp → Cognito sends confirmation OTP
- * - Returning confirmed user: forgotPassword → Cognito sends reset OTP
- */
-/**
- * MOCK OTP SYSTEM FOR TESTING
- */
-const MOCK_OTPS = ["726626", "131514", "692005", "152008"];
+export async function sendOTP(phone: string): Promise<void> {
+  const cleanPhone = formatPhone(phone);
 
-export function sendOTP(phone: string): Promise<void> {
-  _currentPhone = formatPhone(phone);
-  console.log(`[MOCK] Sending OTP from valid list to:`, _currentPhone);
-  
-  return new Promise((resolve) => {
-    // Simulate network delay
-    setTimeout(() => {
-      resolve();
-    }, 800);
-  });
-}
-
-export function verifyOTP(phone: string, code: string): Promise<void> {
-  const formattedPhone = formatPhone(phone);
-  console.log(`[MOCK] Verifying OTP ${code} for:`, formattedPhone);
-
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (MOCK_OTPS.includes(code.trim())) {
-        resolve();
-      } else {
-        reject(new Error("Invalid OTP. Please try again."));
+  if (IS_PROD) {
+    const res = await fetch("/api/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: cleanPhone, action: "send" }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to send OTP");
+  } else {
+    // Development: call backend which returns OTP in response
+    try {
+      const res = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleanPhone, action: "send" }),
+      });
+      const data = await res.json();
+      if (data.devOtp) {
+        pendingDevOtp = data.devOtp;
+        console.log(`%c OTP: ${data.devOtp} `, "background:#1f6b2a;color:white;font-size:20px;padding:8px");
+        // Show OTP in a toast-friendly way
+        (window as any).__DEV_OTP__ = data.devOtp;
       }
-    }, 500);
-  });
+    } catch {
+      // If backend not running in dev, use fixed OTP
+      pendingDevOtp = "123456";
+      console.log(`%c DEV OTP: 123456 `, "background:#1f6b2a;color:white;font-size:20px;padding:8px");
+      (window as any).__DEV_OTP__ = "123456";
+    }
+  }
+}
+
+export async function verifyOTP(phone: string, code: string): Promise<void> {
+  const cleanPhone = formatPhone(phone);
+
+  if (IS_PROD) {
+    const res = await fetch("/api/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: cleanPhone, action: "verify", otp: code }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Invalid OTP");
+    // Store token from server
+    if (data.token) localStorage.setItem("sahayak_token", data.token);
+  } else {
+    // Dev mode verification
+    const validOtp = pendingDevOtp || (window as any).__DEV_OTP__ || "123456";
+    if (code.trim() !== validOtp) throw new Error(`Invalid OTP. Check console for the correct OTP.`);
+    localStorage.setItem("sahayak_token", "dev-token-" + Date.now());
+  }
 }
 
 export function signIn(phone: string): Promise<string> {
-  const formattedPhone = formatPhone(phone);
-  const mockToken = "mock-jwt-token-" + Date.now();
-  
-  localStorage.setItem("sahayak_token", mockToken);
-  localStorage.setItem("sahayak_phone", formattedPhone);
-  
-  return Promise.resolve(mockToken);
+  const formatted = "+91" + formatPhone(phone);
+  localStorage.setItem("sahayak_phone", formatted);
+  return Promise.resolve(localStorage.getItem("sahayak_token") || "");
 }
 
 export function getCurrentUser(): string | null {
@@ -81,14 +81,6 @@ export function isAuthenticated(): boolean {
 }
 
 export function logout(): void {
-  const phone = localStorage.getItem("sahayak_phone");
-  if (phone) {
-    try { getCognitoUser(phone).signOut(); } catch { /* ignore */ }
-  }
   localStorage.removeItem("sahayak_token");
   localStorage.removeItem("sahayak_phone");
-}
-
-function generateTempPassword(): string {
-  return `Sahayak@2024!`;
 }

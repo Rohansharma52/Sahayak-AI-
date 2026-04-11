@@ -104,12 +104,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_STATUS", payload: "idle" });
       
       // Add a friendly error message from the bot
+      const errMsgs: Record<string, string> = {
+        hi: "माफ़ करें, कुछ गड़बड़ हो गई। कृपया दोबारा कोशिश करें।",
+        en: "Sorry, something went wrong. Please try again.",
+        ta: "மன்னிக்கவும், ஏதோ தவறு நடந்தது. மீண்டும் முயற்சிக்கவும்.",
+        mr: "माफ करा, काहीतरी चूक झाली. कृपया पुन्हा प्रयत्न करा.",
+        te: "క్షమించండి, ఏదో తప్పు జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+        kn: "ಕ್ಷಮಿಸಿ, ಏನೋ ತಪ್ಪಾಯಿತು. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+        bn: "দুঃখিত, কিছু একটা ভুল হয়েছে। আবার চেষ্টা করুন।",
+        pa: "ਮਾਫ਼ ਕਰਨਾ, ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+      };
       dispatch({ 
         type: "ADD_MESSAGE", 
-        payload: { 
-          from: "bot", 
-          text: "माफ़ करें, मैं अभी आपकी मदद नहीं कर पा रहा हूँ। कृपया इंटरनेट कनेक्शन चेक करें या थोड़ी देर बाद कोशिश करें।" 
-        } 
+        payload: { from: "bot", text: errMsgs[lang] ?? errMsgs.hi }
       });
     }
   };

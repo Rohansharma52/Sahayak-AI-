@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
@@ -6,6 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ChatProvider } from "@/context/ChatContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Navbar from "@/components/Navbar";
 import LandingPage, { type AppLang } from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
@@ -29,7 +30,7 @@ function AppRoutes() {
     <>
       <Navbar lang={lang} onSetLang={setLang} />
       <Routes>
-        <Route path="/" element={<LandingPage lang={lang} activeNav={activeNav} onNavChange={setActiveNav} />} />
+        <Route path="/" element={<ProtectedRoute><LandingPage lang={lang} activeNav={activeNav} onNavChange={setActiveNav} /></ProtectedRoute>} />
         <Route path="/login" element={<LoginPage lang={lang} />} />
         <Route path="/chat" element={<ProtectedRoute><ChatPage lang={lang} /></ProtectedRoute>} />
         <Route path="/app" element={<ProtectedRoute><ChatPage lang={lang} /></ProtectedRoute>} />
@@ -48,7 +49,9 @@ const App = () => (
         <AuthProvider>
           <ChatProvider>
             <BrowserRouter>
-              <AppRoutes />
+              <ErrorBoundary>
+                <AppRoutes />
+              </ErrorBoundary>
             </BrowserRouter>
           </ChatProvider>
         </AuthProvider>

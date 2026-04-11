@@ -91,6 +91,13 @@ const LoginPage = ({ lang }: LoginPageProps) => {
     try {
       await sendOTP(cleaned);
       setStep("otp");
+      // Dev mode: auto-fill OTP from console
+      if (!import.meta.env.PROD) {
+        setTimeout(() => {
+          const devOtp = (window as any).__DEV_OTP__;
+          if (devOtp) setOtp(devOtp);
+        }, 500);
+      }
     } catch (err: any) {
       setError(err.message || "Failed to send OTP. Please try again.");
     } finally {
@@ -140,9 +147,9 @@ const LoginPage = ({ lang }: LoginPageProps) => {
       >
         {/* Logo */}
         <div className="flex flex-col items-center mb-6 space-y-2">
-          <img src={logo} alt="Sahayak AI" className="h-12 w-12" />
+          <img src={logo} alt="Krishi Mitra 2.0" className="h-12 w-12" />
           <h1 className="text-xl font-extrabold text-foreground">
-            Sahayak <span className="text-gradient-primary">AI</span>
+            Krishi Mitra <span className="text-gradient-primary">2.0</span>
           </h1>
         </div>
 

@@ -10,9 +10,6 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 const LANG_OPTIONS: { code: AppLang; label: string }[] = [
   { code: "hi", label: "हिंदी" }, { code: "en", label: "English" },
-  { code: "ta", label: "தமிழ்" }, { code: "mr", label: "मराठी" },
-  { code: "te", label: "తెలుగు" }, { code: "kn", label: "ಕನ್ನಡ" },
-  { code: "bn", label: "বাংলা" }, { code: "pa", label: "ਪੰਜਾਬੀ" },
 ];
 
 const NOTIFICATIONS = [
@@ -326,7 +323,7 @@ const SettingsModal = ({ isOpen, onClose, lang, t }: { isOpen: boolean, onClose:
                       <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600 dark:text-purple-400"><Lock size={20} /></div>
                       <div>
                         <p className="font-bold text-gray-900 dark:text-white text-sm">{t("Share Usage Data")}</p>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400">{t("Help us improve Sahayak AI by sharing data")}</p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">{t("Help us improve Krishi Mitra 2.0 by sharing data")}</p>
                       </div>
                     </div>
                     <button 
@@ -443,7 +440,7 @@ const Navbar = ({ lang, onSetLang }: NavbarProps) => {
             style={{ background: "linear-gradient(135deg,#1f6b2a,#2e8b57)" }}>
             <img src={logo} alt="" className="h-6 w-6 object-contain" />
           </div>
-          <span className="text-lg font-black text-gray-900 dark:text-white">Sahayak <span style={{ color: "#1f6b2a" }}>AI</span></span>
+          <span className="text-lg font-black text-gray-900 dark:text-white">Krishi Mitra <span style={{ color: "#1f6b2a" }}>2.0</span></span>
         </Link>
 
         {/* Right side */}
@@ -525,7 +522,7 @@ const Navbar = ({ lang, onSetLang }: NavbarProps) => {
                 <button className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 group">
                   <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:bg-blue-600 group-hover:text-white transition-all"><Info size={14} /></div>
                   <div>
-                    <p className="font-black text-gray-800 dark:text-white">{t("About Sahayak")}</p>
+                    <p className="font-black text-gray-800 dark:text-white">{t("About Krishi Mitra")}</p>
                     <p className="text-[10px] text-gray-400 dark:text-gray-500">{t("Version 2.0.4")}</p>
                   </div>
                 </button>

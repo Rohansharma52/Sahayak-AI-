@@ -16,6 +16,10 @@ import SchemePage from "./SchemePage";
 import WeatherPage from "./WeatherPage";
 import AdvisoryPage from "./AdvisoryPage";
 import ChatPage from "./ChatPage";
+import CropDiseasePage from "./CropDiseasePage";
+import CropCalendarPage from "./CropCalendarPage";
+import SmartFarmPage from "./SmartFarmPage";
+import WeatherAlertBanner from "@/components/WeatherAlertBanner";
 import WeatherCard from "@/components/WeatherCard";
 import { LOCATIONS, getWeather, type WeatherData } from "@/services/weatherService";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -24,26 +28,28 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export type AppLang = "hi" | "en" | "ta" | "mr" | "te" | "kn" | "bn" | "pa";
-type TabId = "home" | "chat" | "mandi" | "rog" | "yojana" | "weather" | "advisory";
+type TabId = "home" | "chat" | "mandi" | "rog" | "yojana" | "weather" | "advisory" | "calendar" | "smartfarm";
 
-// ── Sidebar items ─────────────────────────────────────────────────────────────
 const SIDEBAR = [
-  { id: "home",     icon: Home,       label: "Home" },
-  { id: "weather",  icon: Cloud,      label: "Weather" },
-  { id: "mandi",    icon: BarChart2,  label: "Markets" },
-  { id: "advisory", icon: BookOpen,   label: "Advisory" },
-  { id: "rog",      icon: Camera,     label: "Scan" },
-  { id: "yojana",   icon: FileText,   label: "Schemes" },
-  { id: "chat",     icon: Users,      label: "Chatbot" },
-  { id: "help",     icon: HelpCircle, label: "Help" },
+  { id: "home",      icon: Home,       label: "Home" },
+  { id: "smartfarm", icon: Zap,        label: "Smart Farm" },
+  { id: "weather",   icon: Cloud,      label: "Weather" },
+  { id: "mandi",     icon: BarChart2,  label: "Markets" },
+  { id: "advisory",  icon: BookOpen,   label: "Advisory" },
+  { id: "rog",       icon: Camera,     label: "Scan" },
+  { id: "yojana",    icon: FileText,   label: "Schemes" },
+  { id: "calendar",  icon: Calendar,   label: "Calendar" },
+  { id: "chat",      icon: Users,      label: "Chatbot" },
+  { id: "help",      icon: HelpCircle, label: "Help" },
 ];
 
 // ── Scheme cards ──────────────────────────────────────────────────────────────
+// ── Scheme cards (names/descs translated via t() in JSX) ─────────────────────
 const SCHEMES = [
-  { icon: "💰", emoji: Zap,     name: "PM Kisan",          desc: "₹6,000/year",          color: "#1f6b2a", bg: "#eaf7ea" },
-  { icon: "🛡️", emoji: Shield,  name: "Crop Insurance",    desc: "PMFBY Protection",     color: "#1d4ed8", bg: "#eff6ff" },
-  { icon: "💳", emoji: CreditCard, name: "Kisan Credit",   desc: "Low interest loans",   color: "#7c3aed", bg: "#f5f3ff" },
-  { icon: "☀️", emoji: Sparkles, name: "Solar Pump",       desc: "PM KUSUM Scheme",      color: "#d97706", bg: "#fffbeb" },
+  { icon: "💰", name: "PM Kisan",       desc: "₹6,000/year",       color: "#1f6b2a", bg: "#eaf7ea" },
+  { icon: "🛡️", name: "Crop Insurance", desc: "PMFBY Protection",  color: "#1d4ed8", bg: "#eff6ff" },
+  { icon: "💳", name: "Kisan Credit",   desc: "Low interest loans", color: "#7c3aed", bg: "#f5f3ff" },
+  { icon: "☀️", name: "Solar Pump",     desc: "PM KUSUM Scheme",   color: "#d97706", bg: "#fffbeb" },
 ];
 
 // ── i18n ──────────────────────────────────────────────────────────────────────
@@ -163,7 +169,7 @@ const LandingPage = ({ lang, activeNav, onNavChange }: LandingPageProps) => {
       // Header
       doc.setFontSize(22);
       doc.setTextColor(31, 107, 42); // Green
-      doc.text("Sahayak AI - Irrigation Report", 14, 20);
+      doc.text("Krishi Mitra 2.0 - Irrigation Report", 14, 20);
       
       doc.setFontSize(10);
       doc.setTextColor(100);
@@ -237,11 +243,14 @@ const LandingPage = ({ lang, activeNav, onNavChange }: LandingPageProps) => {
   if (activeTab === "weather")  return <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300"><Sidebar /><WeatherPage lang={lang} /></div>;
   if (activeTab === "advisory") return <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300"><Sidebar /><AdvisoryPage lang={lang} /></div>;
   if (activeTab === "chat") return <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300"><Sidebar /><div className="flex-1 h-[calc(100vh-64px)]"><ChatPage lang={lang} /></div></div>;
-  if (activeTab === "rog") return <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300"><Sidebar /><div className="flex-1 h-[calc(100vh-64px)]"><ChatPage lang={lang} /></div></div>;
+  if (activeTab === "rog") return <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300"><Sidebar /><div className="flex-1 h-[calc(100vh-64px)]"><CropDiseasePage lang={lang} /></div></div>;
+  if (activeTab === "calendar") return <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300"><Sidebar /><CropCalendarPage lang={lang} /></div>;
+  if (activeTab === "smartfarm") return <div className="pt-16 pl-16 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300"><Sidebar /><SmartFarmPage lang={lang} /></div>;
 
   return (
     <div className="pt-16 pl-16 min-h-screen transition-colors duration-300" style={{ background: isDarkMode ? "#0a0c0a" : "#f7faf7" }}>
       <Sidebar />
+      <WeatherAlertBanner lang={lang} />
       <div className="max-w-6xl mx-auto px-5 md:px-8 py-7 space-y-6">
 
         {/* HERO */}
@@ -599,7 +608,7 @@ const LandingPage = ({ lang, activeNav, onNavChange }: LandingPageProps) => {
               <h2 className="text-2xl md:text-3xl font-black text-white">{t(UI_EN.diseaseTitle)}</h2>
               <p className="mt-1.5 text-sm" style={{ color:"#86efac" }}>{t(UI_EN.diseaseSub)}</p>
             </div>
-            <motion.button whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }} onClick={goChat}
+            <motion.button whileHover={{ scale:1.05 }} whileTap={{ scale:0.96 }} onClick={() => switchTab("rog")}
               className="shrink-0 flex items-center gap-2.5 px-8 py-4 rounded-2xl font-black text-base shadow-2xl transition-all"
               style={{ background:"white", color:"#1f6b2a" }}>
               <Camera size={20} />{t(UI_EN.scanBtn)}
@@ -727,7 +736,7 @@ const LandingPage = ({ lang, activeNav, onNavChange }: LandingPageProps) => {
         </motion.div>
 
         <div className="py-4 border-t border-gray-100 dark:border-gray-800 text-center">
-          <p className="text-xs text-gray-400 dark:text-gray-500">© {new Date().getFullYear()} Sahayak AI — Made with ❤️ for Indian Farmers</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">© {new Date().getFullYear()} Krishi Mitra 2.0 — Made with ❤️ for Indian Farmers</p>
         </div>
       </div>
     </div>

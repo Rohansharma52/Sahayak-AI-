@@ -4,14 +4,11 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    hmr: {
-      overlay: false,
-    },
+    hmr: { overlay: false },
     proxy: {
       "/datagov-api": {
         target: "https://api.data.gov.in",
@@ -21,11 +18,13 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-  plugins: [react(), nodePolyfills(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [
+    react(),
+    nodePolyfills(),
+    mode === "development" && componentTagger(),
+  ].filter(Boolean),
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
+    alias: { "@": path.resolve(__dirname, "./src") },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
   },
 }));

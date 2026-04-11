@@ -7,25 +7,33 @@ import {
 import type { AppLang } from "./Index";
 import { useTranslation } from "@/hooks/useTranslation";
 
-// ── OpenRouter call ───────────────────────────────────────────────────────────
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "google/gemini-2.0-flash-001";
+// ── Gemini with Google Search Grounding ──────────────────────────────────────
+async function callAI(prompt: string): Promise<string> {
+  const keysRaw = import.meta.env.VITE_GEMINI_API_KEY as string ?? "";
+  const keys = keysRaw.split(",").map(k => k.trim()).filter(k => k && !k.includes("XXXX"));
+  if (!keys.length) throw new Error("VITE_GEMINI_API_KEY not set");
 
-async function callAI(prompt: string, lang: string): Promise<string> {
-  const key = import.meta.env.VITE_OPENROUTER_API_KEY;
-  if (!key) throw new Error("VITE_OPENROUTER_API_KEY not set");
-  const res = await fetch(OPENROUTER_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 3500,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  const data = await res.json();
-  return data?.choices?.[0]?.message?.content?.trim() ?? "";
+  // Try each key with Google Search Grounding enabled
+  for (const key of keys) {
+    // Use gemini-2.0-flash (not lite) — grounding requires this model
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ googleSearch: {} }],
+          generationConfig: { maxOutputTokens: 3500, temperature: 0.2 },
+        }),
+      }
+    );
+    if (res.status === 429) { console.warn(`Key quota exceeded, trying next`); continue; }
+    if (!res.ok) { console.warn(`Gemini error ${res.status}`); continue; }
+    const data = await res.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
+  }
+  throw new Error("API quota exceeded. Try again in 1 minute.");
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -168,7 +176,8 @@ const LEVEL_COLORS: Record<string, string> = {
 // ── Build AI prompt ───────────────────────────────────────────────────────────
 function buildPrompt(profile: FarmerProfile, lang: string): string {
   const langName = LANG_NAME[lang] ?? "Hindi";
-  return `You are an expert on Indian agricultural schemes (government and private). A farmer has provided their profile:
+  const year = new Date().getFullYear();
+  return `Search the web and find ALL currently active Indian government agricultural schemes for ${year} for this farmer:
 - State: ${profile.state}
 - Land Size: ${profile.landSize}
 - Category: ${profile.category}
@@ -177,34 +186,28 @@ function buildPrompt(profile: FarmerProfile, lang: string): string {
 - Gender: ${profile.gender}
 - Main Crop: ${profile.crop}
 
-Find ALL relevant schemes (central government, state government, and private/bank) this farmer is eligible for. Include:
-- Free benefit schemes (PM Kisan, etc.)
-- Loan schemes (KCC, etc.)
-- Subsidy schemes
-- Insurance schemes (PMFBY, etc.)
-- Pension schemes
-- Training schemes
-- Any private bank/NBFC schemes
+Use Google Search to find the LATEST and CURRENTLY ACTIVE schemes. Include central government, state government, and bank/private schemes.
+Include: PM Kisan, KCC, PMFBY, PM KUSUM, soil health card, drip irrigation subsidy, and any NEW schemes launched in ${year}.
 
-For EACH scheme, respond in this EXACT JSON array format (no markdown, no extra text, just valid JSON):
+For EACH scheme respond in this EXACT JSON array format (no markdown, no extra text):
 [
   {
     "id": "unique_id",
-    "name": "Scheme Name in English",
+    "name": "Scheme Name",
     "type": "free|loan|subsidy|insurance|pension|training|other",
     "level": "central|state|private",
     "benefit": "Brief benefit in ${langName}",
     "amount": "Amount/benefit value",
     "eligibility": "Who is eligible in ${langName}",
     "description": "2-3 sentence description in ${langName}",
-    "steps": ["Step 1 in ${langName}", "Step 2 in ${langName}", "Step 3 in ${langName}", "Step 4 in ${langName}"],
+    "steps": ["Step 1 in ${langName}", "Step 2 in ${langName}", "Step 3 in ${langName}"],
     "documents": ["Document 1 in ${langName}", "Document 2 in ${langName}"],
     "link": "https://official-website.gov.in",
     "helpline": "1800-XXX-XXXX"
   }
 ]
 
-Return ONLY the JSON array. No markdown. No code fences. No newlines inside string values. Use only ASCII-safe characters in JSON strings. Ensure all strings are properly escaped.`;
+Return ONLY the JSON array. No markdown. No code fences.`;
 }
 
 // ── Voice using browser TTS (fallback when Polly not configured) ──────────────
@@ -276,7 +279,7 @@ const SchemePage = ({ lang }: SchemePageProps) => {
     setSearched(true);
     setExpanded(null);
     try {
-      const raw = await callAI(buildPrompt(profile, lang), lang);
+      const raw = await callAI(buildPrompt(profile, lang));
 
       // ── Robust JSON extraction & cleaning ──────────────────────────────────
       // 1. Extract the JSON array from the response
@@ -300,7 +303,7 @@ const SchemePage = ({ lang }: SchemePageProps) => {
       const parsed: SchemeCard[] = JSON.parse(jsonStr);
       setSchemes(parsed.filter((s) => s && s.name));
     } catch (e: any) {
-      setError("JSON parse error: " + (e.message ?? "Unknown error") + " — Dobara try karein.");
+      setError(e.message ?? "Something went wrong. Please try again.");
     }
     setLoading(false);
   };

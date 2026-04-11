@@ -1,39 +1,27 @@
-const LANG_NAME: Record<string, string> = {
-  hi: "Hindi",
-  en: "English",
-  ta: "Tamil",
-  mr: "Marathi",
-  te: "Telugu",
-  kn: "Kannada",
-  bn: "Bengali",
-  pa: "Punjabi",
-};
+import { callGemini } from "./geminiProxy";
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "google/gemini-2.0-flash-lite-001";
+const LANG_NAME: Record<string, string> = {
+  hi: "Hindi", en: "English", ta: "Tamil", mr: "Marathi",
+  te: "Telugu", kn: "Kannada", bn: "Bengali", pa: "Punjabi",
+};
 
 type Message = { role: string; content: string };
 
-async function callModel(messages: Message[], maxTokens = 400): Promise<string> {
-  const key = import.meta.env.VITE_OPENROUTER_API_KEY;
-  if (!key) throw new Error("VITE_OPENROUTER_API_KEY not set");
+async function callModel(messages: Message[], maxTokens = 500): Promise<string> {
+  const contents = messages
+    .filter(m => m.role !== "system")
+    .map(m => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    }));
 
-  const res = await fetch(OPENROUTER_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${key}`,
-    },
-    body: JSON.stringify({ model: MODEL, messages, max_tokens: maxTokens }),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`OpenRouter error ${res.status}: ${errText}`);
+  const systemMsg = messages.find(m => m.role === "system");
+  if (systemMsg) {
+    contents.unshift({ role: "user", parts: [{ text: systemMsg.content }] });
+    contents.splice(1, 0, { role: "model", parts: [{ text: "Understood." }] });
   }
 
-  const data = await res.json();
-  return data?.choices?.[0]?.message?.content?.trim() ?? "";
+  return callGemini(contents, { maxOutputTokens: 1500, temperature: 0.7 });
 }
 
 /**
@@ -46,7 +34,7 @@ export async function askGemini(
 ): Promise<string> {
   const langName = LANG_NAME[language] ?? "Hindi";
 
-  const systemPrompt = `You are Sahayak AI, a knowledgeable and friendly assistant for Indian farmers. You help with ALL farming-related topics.
+  const systemPrompt = `You are Krishi Mitra 2.0, a knowledgeable and friendly assistant for Indian farmers. You help with ALL farming-related topics.
 
 You can answer questions about:
 - Crops: sowing time, harvesting, irrigation, fertilizers, seeds, crop rotation
@@ -61,7 +49,8 @@ You can answer questions about:
 
 Rules:
 - Always reply in simple, easy ${langName} only — as if talking to a village farmer
-- Keep replies concise: 3-6 lines max, plain text, no markdown, no bullet symbols
+- Give COMPLETE answers — never cut off mid-sentence. Always finish your response fully.
+- Keep replies focused: 4-8 lines max, plain text, no markdown, no bullet symbols
 - Be warm, helpful, and encouraging
 - If the question is completely unrelated to farming/agriculture, politely say you only help with farming topics
 - Never ask for personal info unless the farmer volunteers it`;
